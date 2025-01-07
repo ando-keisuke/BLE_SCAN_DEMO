@@ -1,6 +1,7 @@
 package com.example.ble_scan_demo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseData;
@@ -23,21 +24,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.ble_scan_demo.psermission.PermissionDispatcher;
+import com.example.ble_scan_demo.psermission.PermissionGroup;
+
 public class MainActivity extends AppCompatActivity {
     BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
     boolean scanning = false;
 
-    // 必要なパーミッションリスト
-    String[] REQUIRED_PERMISSIONS = {
-            android.Manifest.permission.BLUETOOTH,
-//            android.Manifest.permission.BLUETOOTH_ADMIN,
-            android.Manifest.permission.BLUETOOTH_ADVERTISE,
-            android.Manifest.permission.BLUETOOTH_CONNECT,
-            android.Manifest.permission.BLUETOOTH_SCAN,
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-    };
+    private PermissionDispatcher permissionDispatcher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,49 +45,18 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // パーミッションの確認とリクエスト
-        if (!checkPermissions()) {
-            requestPermissions();
-        } else {
-            initializeBluetooth();
+        // すべての権限をリクエストする
+        permissionDispatcher = new PermissionDispatcher(this);
+
+        for (PermissionGroup group: PermissionGroup.values()) {
+            if (!permissionDispatcher.checkPermissions(group)) {
+                permissionDispatcher.requestPermissions(group);
+            }
         }
 
         findViewById(R.id.scan_button).setOnClickListener(v -> {
             scanBLEDevice();
         });
-    }
-    // パーミッションチェック
-    private boolean checkPermissions() {
-        for (String permission : REQUIRED_PERMISSIONS) {
-            if (ActivityCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // パーミッションのリクエスト
-    private void requestPermissions() {
-        ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestMultiplePermissions(),
-                result -> {
-                    for (int i = 0; i < result.size();i++){
-                        Log.d("BLE_PERM",REQUIRED_PERMISSIONS[i] + " : " + result.get(REQUIRED_PERMISSIONS[i]));
-                    }
-                    boolean allGranted = true;
-                    for (Boolean granted : result.values()) {
-                        if (!granted) {
-                            allGranted = false;
-                            break;
-                        }
-                    }
-                    if (allGranted) {
-                        initializeBluetooth();
-                    } else {
-                        Toast.makeText(this, "すべての権限を許可してください", Toast.LENGTH_SHORT).show();
-                    }
-                });
-        permissionLauncher.launch(REQUIRED_PERMISSIONS);
     }
 
     // Bluetoothの初期化
@@ -135,8 +99,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         ScanCallback scanCallback = new ScanCallback() {
+            @SuppressLint("MissingPermission")
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
+                if (!permissionDispatcher.checkPermissions(PermissionGroup.BLUETOOTH)) {
+                    Log.e("BLE-SCAN-DBG", "ScanCallback: Bluetooth Permission denied!");
+                }
+
                 super.onScanResult(callbackType, result);
                 if (result == null) {
                     Log.e("BLE_SCAN", "onScanResult: result is null");
@@ -149,8 +118,10 @@ public class MainActivity extends AppCompatActivity {
         scanning = true;
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
+            @SuppressLint("MissingPermission")
             @Override
             public void run() {
+                permissionDispatcher.checkPermissions(PermissionGroup.BLUETOOTH);
                 scanner.stopScan(scanCallback);
                 scanning = false;
             }
