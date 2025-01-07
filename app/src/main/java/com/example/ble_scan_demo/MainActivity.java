@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        scanner.startScan(callback,5);
+        scanner.startScan(callback,5000);
     }
 
 }
