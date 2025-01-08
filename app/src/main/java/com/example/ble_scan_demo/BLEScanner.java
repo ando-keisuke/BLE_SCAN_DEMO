@@ -61,15 +61,17 @@ public class BLEScanner {
             stopScan();
         }
 
+        this.scanCallback = callback;
+
         handler.postDelayed(() -> {
-            scanning = false;
             scanner.stopScan(callback);
+            scanning = false;
+
+            Log.d("BLE-SCAB","BLEScanner: finish Scan!");
         }, scanPeriod);
 
         scanning = true;
         scanner.startScan(scanCallback);
-
-        this.scanCallback = callback;
 
         Log.d("BLE-SCAN","BLEScanner: start scan!");
     }
