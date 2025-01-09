@@ -1,5 +1,6 @@
 package com.example.ble_scan_demo;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -17,6 +18,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.ble_scan_demo.psermission.PermissionDispatcher;
 import com.example.ble_scan_demo.psermission.PermissionGroup;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     BluetoothManager bluetoothManager;
@@ -69,23 +73,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         scanner = new BLEScanner(bluetoothManager, bluetoothAdapter, permissionDispatcher);
-
     }
+
+    @SuppressLint("MissingPermission")
     private void scanBLEDevice() {
-        if (scanner == null) {
-            initializeBluetooth();
-            return;
-        }
+        BLEClient client = new BLEClient(bluetoothManager, bluetoothAdapter, permissionDispatcher);
 
-        ScanCallback callback = new ScanCallback() {
-            @Override
-            public void onScanResult(int callbackType, ScanResult result) {
-                super.onScanResult(callbackType, result);
-                Log.i("BLE-SCAN","result" + result);
+        client.startScan((scanResults) -> {
+            for (Map.Entry<String, ScanResult> entry : scanResults.entrySet()) {
+                BluetoothDevice device = entry.getValue().getDevice();
+                Log.i("BLE-SCAN", "Device: " + device.getName() + " (" + device.getAddress() + ")");
             }
-        };
-
-        scanner.startScan(callback,5000);
+        });
     }
 
 }

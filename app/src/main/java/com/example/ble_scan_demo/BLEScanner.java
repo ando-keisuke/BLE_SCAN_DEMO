@@ -5,12 +5,17 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.os.Handler;
 import android.util.Log;
 
 
 import com.example.ble_scan_demo.psermission.PermissionDispatcher;
 import com.example.ble_scan_demo.psermission.PermissionGroup;
+
+import java.util.List;
 
 // BLEScannerクラス
 // BLE機器のスキャンをするクラス
@@ -50,8 +55,9 @@ public class BLEScanner {
         return bluetoothAdapter.isEnabled();
     }
 
+    // スキャンを開始するメソッド
     @SuppressLint("MissingPermission")
-    public void startScan(ScanCallback callback, int scanPeriod) {
+    public void startScan(ScanFilter scanFilter,ScanSettings scanSettings, ScanCallback callback, int scanPeriod) {
         if (!permissionDispatcher.checkPermissions(PermissionGroup.BLUETOOTH)) {
             Log.e("BLE-SCAN","BLEScanner: Permission denied!");
             return;
@@ -71,14 +77,19 @@ public class BLEScanner {
         }, scanPeriod);
 
         scanning = true;
-        scanner.startScan(scanCallback);
 
+        scanner.startScan(
+                List.of(scanFilter != null ? scanFilter : new ScanFilter.Builder().build()),
+                scanSettings != null ? scanSettings : new ScanSettings.Builder().build(),
+                callback
+        );
         Log.d("BLE-SCAN","BLEScanner: start scan!");
     }
 
     @SuppressLint("MissingPermission")
     public void stopScan() {
         if (!scanning) {
+            Log.d("BLE-SCAN","BLEScanner: stopScan was called but not scanning!");
             return;
         }
 
