@@ -4,8 +4,6 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanResult;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -25,10 +23,11 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
-    boolean scanning = false;
 
     private PermissionDispatcher permissionDispatcher;
     private BLEScanner scanner;
+
+    private boolean scanning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+//        InfoFilter filter = new InfoFilter();
+//        filter.test();
+
 
         // すべての権限をリクエストする
         permissionDispatcher = new PermissionDispatcher(this);
@@ -53,7 +56,12 @@ public class MainActivity extends AppCompatActivity {
         initializeBluetooth();
 
         findViewById(R.id.scan_button).setOnClickListener(v -> {
-            scanBLEDevice();
+            scanning = true;
+
+            new Thread(() -> {
+                scanBLEDevice();
+                scanning = false;
+            }).start();
         });
 
     }
@@ -72,19 +80,22 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        scanner = new BLEScanner(bluetoothManager, bluetoothAdapter, permissionDispatcher);
+        scanner = new BLEScanner(bluetoothAdapter, permissionDispatcher);
     }
 
     @SuppressLint("MissingPermission")
     private void scanBLEDevice() {
-        BLEClient client = new BLEClient(bluetoothManager, bluetoothAdapter, permissionDispatcher);
 
-        client.startScan((scanResults) -> {
-            for (Map.Entry<String, ScanResult> entry : scanResults.entrySet()) {
-                BluetoothDevice device = entry.getValue().getDevice();
-                Log.i("BLE-SCAN", "Device: " + device.getName() + " (" + device.getAddress() + ")");
+        try {
+            HashMap<String, BluetoothDevice> deviceMap = scanner.scanDevice(5, null, null);
+
+            // 見つけたデバイスの数を出力
+            Log.i("BLE-SCAN", "Found " + deviceMap.size() + " devices");
+            for (Map.Entry<String, BluetoothDevice> entry: deviceMap.entrySet()) {
+                Log.i("BLE-SCAN", "Device: " + entry.getValue().getName() + " (" + entry.getKey() + ")");
             }
-        });
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
-
 }
