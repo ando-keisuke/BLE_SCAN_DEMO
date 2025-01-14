@@ -70,10 +70,30 @@ public class BLEConnector {
                         if (characteristic != null) {
                             // フィルターを取得
                             gatt.readCharacteristic(characteristic);
+                        } else {
+                            Log.i(TAG,"characteristic was not found");
                         }
                     }
                 }
             }
+            @Override
+            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    switch (characteristic.getUuid().toString()) {
+                        case BLEConfig.GREETING_CHARACTERISTIC_UUID:
+                            // 読み取ったデータを処理
+                            byte[] message = characteristic.getValue();
+                            Log.d(TAG, "greeting from gatt server : " + new String(message));
+                            break;
+                        case BLEConfig.INFO_CHARACTERISTIC_UUID:
+                            byte[] value = characteristic.getValue();
+                            Log.d(TAG, "greeting from gatt server : " + new String(value));
+                    }
+                } else {
+                    Log.e(TAG, "Failed to read characteristic.");
+                }
+            }
+
 
         };
 
@@ -85,6 +105,7 @@ public class BLEConnector {
                 BluetoothDevice.TRANSPORT_LE);
     }
 
+    @SuppressLint("MissingPermission")
     private void compareAndRequestData(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().toString().equals(BLEConfig.FILTER_CHARACTERISTIC_UUID)) {
             // フィルターのデータを取得

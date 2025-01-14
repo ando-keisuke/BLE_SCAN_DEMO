@@ -26,7 +26,7 @@ public class BLEClient {
     private BLEConnector connector;
 
     // スキャンを行う間隔
-    private static final int DEFAULT_SCAN_PERIOD = 5000;
+    private static final int DEFAULT_SCAN_PERIOD = 5;
     // 同じでデバイスに接続をする間隔
     private static final int CONNECT_INTERVAL = 60 * 5;
 
@@ -47,18 +47,20 @@ public class BLEClient {
 
     }
 
-    public void ScanAndFilterDevice() {
+    public void scanAndFilterDevice() {
         HashMap<String, BluetoothDevice> scanDeviceMap;
 
         try {
             scanDeviceMap = scanner.scanDevice(DEFAULT_SCAN_PERIOD, null, null);
+            Log.i("CLIENT", scanDeviceMap.size() + " devices found!");
         } catch (InterruptedException e) {
             Log.e("BLE-SCAN-DBG", "Failed to scan devices");
             return;
         }
 
-        for (String mac : knownDeviceMacList.keySet()) {
-            if (scanDeviceMap.containsKey(mac)) {
+        for (String mac : scanDeviceMap.keySet()) {
+            if (filterDevice(mac,scanDeviceMap.get(mac))) {
+                Log.i("BLE-SCAN-DBG",scanDeviceMap.get(mac).getName() + " was added to target list");
                 targetDevices.put(mac, scanDeviceMap.get(mac));
             }
         }
@@ -68,6 +70,7 @@ public class BLEClient {
             BluetoothDevice device = targetDevices.get(mac);
             // ここで接続処理を行う
             if (device != null) {
+                Log.i("BLEConnector","connecting to device: " + device.getName() + " (" + device.getAddress() + ")");
                 connector.connectGattServer(device);
             }
         }
@@ -75,18 +78,15 @@ public class BLEClient {
 
     @SuppressLint("MissingPermission")
     private boolean filterDevice(String mac, BluetoothDevice device) {
-        if (rejectedMacAdressList.contains(mac)) {
-            return false;
+        if (device.getName() == null) {
+            return  false;
         }
-
-        if (knownDeviceMacList.containsKey(mac)) {
-            targetDevices.put(mac, device);
+        if (device.getName().equals("A11")) {
+            Log.i("device", "A11 found!");
             return true;
-        }
+        } else {
+            Log.d("device","device Name: " + device.getName() + " == A11: false" );
 
-        if (device.getName() == "") {
-            rejectedMacAdressList.add(mac);
-            return false;
         }
 
         return false;

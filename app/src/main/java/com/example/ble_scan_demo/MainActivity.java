@@ -55,12 +55,17 @@ public class MainActivity extends AppCompatActivity {
 
         initializeBluetooth();
 
+        BLEClient client = new BLEClient(this,bluetoothManager,bluetoothAdapter,permissionDispatcher);
+
         findViewById(R.id.scan_button).setOnClickListener(v -> {
             scanning = true;
 
             new Thread(() -> {
-                scanBLEDevice();
+//                scanBLEDevice();
+//                scanning = false;
+                client.scanAndFilterDevice();
                 scanning = false;
+
             }).start();
         });
 
