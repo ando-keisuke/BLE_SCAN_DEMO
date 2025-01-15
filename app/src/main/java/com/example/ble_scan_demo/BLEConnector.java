@@ -8,7 +8,11 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.net.wifi.aware.Characteristics;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 
 public class BLEConnector {
@@ -34,10 +38,9 @@ public class BLEConnector {
                         // Exchange MTU Request
                         // 512Bまで拡張を要求
                         if (gatt.requestMtu(512)) {
-                            Log.d(TAG, "Requested MTU successfully");
-                            gatt.discoverServices();
+                            Log.d(TAG, "request exchange mtu size 512");
                         } else {
-                            Log.d(TAG, "Failed to request MTU");
+                            Log.d(TAG, "Failed to request MTU exchange");
                             gatt.disconnect();
                         }
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -48,15 +51,20 @@ public class BLEConnector {
                     gatt.disconnect();
                 }
             }
+
             @SuppressLint("MissingPermission")
             @Override
             public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.i(TAG, "MTU changed to " + mtu);
+                    Log.i(TAG, "Successfully changed MTU to " + mtu);
+
+                    Log.i(TAG,"Searching for services....");
+                    gatt.discoverServices();
                 } else {
                     Log.w(TAG, "Error " + status + " encountered while changing MTU");
                 }
             }
+            @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
             @SuppressLint("MissingPermission")
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
@@ -66,10 +74,28 @@ public class BLEConnector {
                     if (service != null) {
                         // 特定のキャラクタリスティックを検索
                         BluetoothGattCharacteristic characteristic =
-                                service.getCharacteristic(java.util.UUID.fromString(BLEConfig.FILTER_CHARACTERISTIC_UUID));
+                                service.getCharacteristic(java.util.UUID.fromString(BLEConfig.INFO_CHARACTERISTIC_UUID));
                         if (characteristic != null) {
-                            // フィルターを取得
-                            gatt.readCharacteristic(characteristic);
+                            int index = 0;
+
+                            Log.i(TAG, "get Information...");
+
+                            // Characteristicの書き込みモードを指定する
+                            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
+                            // データをセットする
+                            characteristic.setValue("1".getBytes());
+
+                            Log.i("書き込み","書き込み中... index: " + index);
+                            boolean success = gatt.writeCharacteristic(characteristic);
+
+                            Log.i("書き込み","Successfully write index!");
+
+                            if (success) {
+                                boolean success_read = gatt.readCharacteristic(characteristic);
+                                Log.i("success", "Successfully read Data");
+
+                            }
                         } else {
                             Log.i(TAG,"characteristic was not found");
                         }

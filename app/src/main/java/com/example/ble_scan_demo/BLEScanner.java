@@ -86,6 +86,7 @@ public class BLEScanner {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 BluetoothDevice device = result.getDevice();
+
                 if (device != null && device.getAddress() != null) {
                     deviceMap.put(device.getAddress(), device);
                 }

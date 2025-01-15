@@ -61,8 +61,6 @@ public class MainActivity extends AppCompatActivity {
             scanning = true;
 
             new Thread(() -> {
-//                scanBLEDevice();
-//                scanning = false;
                 client.scanAndFilterDevice();
                 scanning = false;
 

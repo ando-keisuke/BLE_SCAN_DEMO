@@ -33,9 +33,9 @@ public class BLEClient {
     // 接続対象のデバイスのリスト
     private final HashMap<String, BluetoothDevice> targetDevices = new HashMap<>();
 
-    private final HashMap<String,Integer> knownDeviceMacList = new HashMap<>();
-
-    private final ArrayList<String> rejectedMacAdressList = new ArrayList<>();
+//    private final HashMap<String,Integer> knownDeviceMacList = new HashMap<>();
+//
+//    private final ArrayList<String> rejectedMacAdressList = new ArrayList<>();
 
     public BLEClient(Activity activity,BluetoothManager bluetoothManager, BluetoothAdapter bluetoothAdapter, PermissionDispatcher permissionDispatcher) {
         this.scanner = new BLEScanner(
@@ -47,6 +47,7 @@ public class BLEClient {
 
     }
 
+    @SuppressLint("MissingPermission")
     public void scanAndFilterDevice() {
         HashMap<String, BluetoothDevice> scanDeviceMap;
 
@@ -65,6 +66,9 @@ public class BLEClient {
             }
         }
 
+        if (targetDevices.size() > 0) {
+            Log.i("CLIENT","trying connecting " + targetDevices.size() + " devices....");
+        }
         // 順番に接続を行う
         for (String mac : targetDevices.keySet()) {
             BluetoothDevice device = targetDevices.get(mac);
@@ -81,14 +85,15 @@ public class BLEClient {
         if (device.getName() == null) {
             return  false;
         }
-        if (device.getName().equals("A11")) {
-            Log.i("device", "A11 found!");
-            return true;
-        } else {
-            Log.d("device","device Name: " + device.getName() + " == A11: false" );
+//        if (device.getName().equals("A11")) {
+//            Log.i("device", "A11 found!");
+//            return true;
+//        } else {
+//            Log.d("device","device Name: " + device.getName() + " == A11: false" );
+//
+//        }
+//        return false;
 
-        }
-
-        return false;
+        return true;
     }
 }
